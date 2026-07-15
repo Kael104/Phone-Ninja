@@ -1,0 +1,44 @@
+---
+description: Design System Rules
+globs: "**/*.{tsx,css}"
+alwaysApply: false
+---
+
+# Design System & Component Standards
+
+## Stack
+
+- React 18+ with TypeScript
+- Bun as runtime and package manager
+- Tailwind CSS for styling
+- Component-driven architecture
+
+## Naming Conventions
+
+- Components: PascalCase (e.g., UserCard, NavBar)
+- Files: Match component names (UserCard.tsx)
+- Props interfaces: ComponentNameProps
+- CSS classes: Use Tailwind utilities first, custom classes as exceptions
+
+## Component Structure
+
+Every component should follow this pattern:
+
+1. Import statements
+2. Type definitions (interfaces)
+3. Component function
+4. Export statement
+
+## Accessibility Requirements
+
+- All interactive elements must have proper ARIA labels
+- Maintain color contrast ratios of at least 4.5:1
+- Support keyboard navigation
+- Include semantic HTML elements
+
+## Code Style
+
+- Use functional components with hooks only
+- Prefer named exports over default exports
+- Keep components under 200 lines; split if larger
+- Extract reusable logic into custom hooks

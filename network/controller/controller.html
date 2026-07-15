@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Phone Ninja Controller</title>
+  <style>
+    :root {
+      --bg: #0e1116;
+      --cyan: #22d3ee;
+      --magenta: #f0398b;
+      --lime: #a3e635;
+      --muted: #788291;
+      --white: #f0f4f8;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; height: 100%;
+      background: var(--bg); color: var(--white);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      overflow: hidden; touch-action: none;
+    }
+    .wrap {
+      min-height: 100%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 24px; gap: 20px; text-align: center;
+    }
+    h1 {
+      font-size: 1.6rem; margin: 0;
+      color: var(--cyan); letter-spacing: 0.04em;
+    }
+    p { margin: 0; color: var(--muted); max-width: 28rem; line-height: 1.4; }
+    button {
+      appearance: none; border: 2px solid var(--lime);
+      background: #1a222c; color: var(--white);
+      font-size: 1.15rem; font-weight: 600;
+      padding: 18px 28px; border-radius: 12px;
+      width: min(90vw, 320px); cursor: pointer;
+    }
+    button:active { background: var(--lime); color: #0e1116; }
+    button:disabled { opacity: 0.5; }
+    .status {
+      font-size: 0.95rem; padding: 10px 16px;
+      border-radius: 999px; border: 1px solid #2a3340;
+      color: var(--muted);
+    }
+    .status.ok { color: var(--lime); border-color: var(--lime); }
+    .status.warn { color: var(--magenta); border-color: var(--magenta); }
+    .debug {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 0.75rem; color: var(--muted);
+      white-space: pre; text-align: left;
+      background: #151a22; padding: 12px 14px; border-radius: 8px;
+      width: min(90vw, 340px);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Phone Ninja</h1>
+    <p>This phone is a motion controller only. Enable sensors, then keep the screen on while you play on the laptop.</p>
+    <button id="btn" type="button">Enable Motion + Connect</button>
+    <div id="status" class="status">Disconnected</div>
+    <div id="debug" class="debug">ax ay az / gx gy gz</div>
+  </div>
+  <script>
+    const btn = document.getElementById("btn");
+    const statusEl = document.getElementById("status");
+    const debugEl = document.getElementById("debug");
+
+    let ws = null;
+    let streaming = false;
+    let lastSend = 0;
+    let lastAlpha = 0;
+    let lastBeta = 0;
+    let lastGamma = 0;
+    const TARGET_HZ = 60;
+    const MIN_INTERVAL = 1000 / TARGET_HZ;
+
+    function setStatus(text, cls) {
+      statusEl.textContent = text;
+      statusEl.className = "status" + (cls ? " " + cls : "");
+    }
+
+    function wsUrl() {
+      const proto = location.protocol === "https:" ? "wss:" : "ws:";
+      return proto + "//" + location.host + "/ws";
+    }
+
+    async function requestPermission() {
+      // iOS / some Android Chrome builds require this
+      if (typeof DeviceMotionEvent !== "undefined" &&
+          typeof DeviceMotionEvent.requestPermission === "function") {
+        const res = await DeviceMotionEvent.requestPermission();
+        if (res !== "granted") throw new Error("Motion permission denied");
+      }
+      if (typeof DeviceOrientationEvent !== "undefined" &&
+          typeof DeviceOrientationEvent.requestPermission === "function") {
+        const res = await DeviceOrientationEvent.requestPermission();
+        if (res !== "granted") throw new Error("Orientation permission denied");
+      }
+    }
+
+    function onOrientation(event) {
+      if (event.alpha != null) lastAlpha = event.alpha;
+      if (event.beta != null) lastBeta = event.beta;
+      if (event.gamma != null) lastGamma = event.gamma;
+    }
+
+    function connect() {
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+        return;
+      }
+      ws = new WebSocket(wsUrl());
+      ws.onopen = () => {
+        setStatus("Connected — streaming", "ok");
+        ws.send(JSON.stringify({ type: "hello", role: "phone", version: 1 }));
+      };
+      ws.onclose = () => {
+        setStatus("Disconnected — tap to reconnect", "warn");
+        streaming = false;
+        btn.disabled = false;
+      };
+      ws.onerror = () => setStatus("Connection error", "warn");
+    }
+
+    function onMotion(event) {
+      if (!streaming || !ws || ws.readyState !== WebSocket.OPEN) return;
+      const now = performance.now();
+      if (now - lastSend < MIN_INTERVAL) return;
+      lastSend = now;
+
+      const a = event.accelerationIncludingGravity || event.acceleration || {};
+      const r = event.rotationRate || {};
+      const packet = {
+        type: "sensor",
+        t: event.timeStamp || now,
+        ax: a.x || 0,
+        ay: a.y || 0,
+        az: a.z || 0,
+        gx: r.alpha || 0,
+        gy: r.beta || 0,
+        gz: r.gamma || 0,
+        alpha: lastAlpha,
+        beta: lastBeta,
+        gamma: lastGamma,
+      };
+      ws.send(JSON.stringify(packet));
+      debugEl.textContent =
+        `a ${packet.ax.toFixed(2)} ${packet.ay.toFixed(2)} ${packet.az.toFixed(2)}\n` +
+        `g ${packet.gx.toFixed(2)} ${packet.gy.toFixed(2)} ${packet.gz.toFixed(2)}\n` +
+        `orient α ${packet.alpha.toFixed(1)}  β ${packet.beta.toFixed(1)}  γ ${packet.gamma.toFixed(1)}`;
+    }
+
+    btn.addEventListener("click", async () => {
+      try {
+        btn.disabled = true;
+        setStatus("Requesting permission…");
+        await requestPermission();
+        connect();
+        window.removeEventListener("devicemotion", onMotion);
+        window.removeEventListener("deviceorientation", onOrientation);
+        window.removeEventListener("deviceorientationabsolute", onOrientation);
+        window.addEventListener("devicemotion", onMotion, { passive: true });
+        if ("ondeviceorientationabsolute" in window) {
+          window.addEventListener("deviceorientationabsolute", onOrientation, { passive: true });
+        } else {
+          window.addEventListener("deviceorientation", onOrientation, { passive: true });
+        }
+        streaming = true;
+        setStatus("Connecting…");
+      } catch (err) {
+        setStatus(String(err.message || err), "warn");
+        btn.disabled = false;
+        streaming = false;
+      }
+    });
+  </script>
+</body>
+</html>

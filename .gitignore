@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+network/certs/
+*.pem
+recordings/
+.DS_Store
+
+# Environment / secrets (none used today; defensive so future files never leak)
+.env
+.env.*

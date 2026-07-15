@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Phone Ninja Controller</title>
+  <style>
+    :root {
+      --bg: #0e1116;
+      --cyan: #22d3ee;
+      --magenta: #f0398b;
+      --lime: #a3e635;
+      --amber: #fbbf24;
+      --muted: #788291;
+      --white: #f0f4f8;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; height: 100%;
+      background: var(--bg); color: var(--white);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      overflow: hidden; touch-action: none;
+    }
+    .wrap {
+      min-height: 100%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start;
+      padding: 20px 16px; gap: 14px; text-align: center;
+    }
+    h1 {
+      font-size: 1.5rem; margin: 0;
+      color: var(--cyan); letter-spacing: 0.04em;
+    }
+    .subtitle { margin: 0; color: var(--muted); max-width: 28rem; line-height: 1.4; font-size: 0.9rem; }
+    button {
+      appearance: none; border: 2px solid var(--lime);
+      background: #1a222c; color: var(--white);
+      font-size: 1rem; font-weight: 600;
+      padding: 14px 20px; border-radius: 12px;
+      width: min(92vw, 340px); cursor: pointer;
+    }
+    button:active { background: var(--lime); color: #0e1116; }
+    button:disabled { opacity: 0.5; }
+    button.secondary { border-color: var(--cyan); }
+    button.tertiary { border-color: var(--amber); font-size: 0.9rem; padding: 10px 16px; }
+    .row { display: flex; gap: 10px; width: min(92vw, 340px); }
+    .row button { flex: 1; width: auto; }
+    .status {
+      font-size: 0.95rem; padding: 10px 16px;
+      border-radius: 999px; border: 1px solid #2a3340;
+      color: var(--muted);
+    }
+    .status.ok { color: var(--lime); border-color: var(--lime); }
+    .status.warn { color: var(--magenta); border-color: var(--magenta); }
+    .metrics {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px; width: min(92vw, 340px);
+    }
+    .metric {
+      background: #151a22; border-radius: 8px; padding: 10px;
+      font-size: 0.8rem;
+    }
+    .metric .label { color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .metric .value { font-family: ui-monospace, Consolas, monospace; font-size: 1.1rem; margin-top: 4px; }
+    .debug {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 0.72rem; color: var(--muted);
+      white-space: pre; text-align: left;
+      background: #151a22; padding: 12px 14px; border-radius: 8px;
+      width: min(92vw, 340px); max-height: 28vh; overflow-y: auto;
+    }
+    .client-badge {
+      font-size: 0.75rem; padding: 4px 10px; border-radius: 6px;
+      background: #1a222c; color: var(--cyan);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Phone Ninja</h1>
+    <p class="subtitle">Motion controller only — point at the laptop screen. Tilt to aim; cursor stops when you stop tilting.</p>
+    <button id="btnConnect" type="button">Enable Motion + Connect</button>
+    <div id="status" class="status">Disconnected</div>
+    <div id="clientBadge" class="client-badge" hidden></div>
+    <div class="metrics">
+      <div class="metric"><div class="label">FPS</div><div class="value" id="fpsVal">—</div></div>
+      <div class="metric"><div class="label">Latency</div><div class="value" id="latencyVal">—</div></div>
+      <div class="metric"><div class="label">Battery</div><div class="value" id="batteryVal">—</div></div>
+      <div class="metric"><div class="label">Send rate</div><div class="value" id="sendRateVal">—</div></div>
+    </div>
+    <div class="row">
+      <button id="btnCalibrate" class="tertiary" type="button" disabled>Calibrate</button>
+      <button id="btnRecenter" class="tertiary" type="button" disabled>Recenter</button>
+    </div>
+    <div class="row">
+      <button id="btnStartGame" class="secondary" type="button" disabled>Start Game</button>
+      <button id="btnStopGame" class="secondary" type="button" disabled>Stop</button>
+    </div>
+    <div id="debug" class="debug">Waiting for sensors…</div>
+  </div>
+  <script src="/js/ui.js"></script>
+  <script src="/js/websocket.js"></script>
+  <script src="/js/sensors.js"></script>
+  <script src="/js/calibration.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

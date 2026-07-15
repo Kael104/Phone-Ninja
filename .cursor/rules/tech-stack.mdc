@@ -1,0 +1,43 @@
+---
+description: Tech Stack Guidelines
+globs: "**/*.{ts,tsx,json}"
+alwaysApply: false
+---
+
+# React + TypeScript + Bun Stack
+
+## Package Manager
+
+Always use Bun commands:
+
+- Install: `bun add [package]`
+- Dev server: `bun dev`
+- Build: `bun run build`
+- Remove: `bun remove [package]`
+
+## TypeScript Standards
+
+- Enable strict mode
+- Define interfaces for all props and state
+- Use type inference where possible
+- Avoid `any` type; use `unknown` if needed
+
+## Project Structure
+
+```
+src/
+├── components/   # Reusable UI components
+├── pages/        # Page-level components
+├── hooks/        # Custom React hooks
+├── types/        # TypeScript type definitions
+├── utils/        # Helper functions
+├── api/          # API integration layer
+└── styles/       # Global styles and themes
+```
+
+## Environment Variables
+
+- Store in `.env.local` for local development
+- Prefix with `VITE_` for client-side access
+- Never commit `.env.local` to version control
+- Document all required variables in `.env.example`
